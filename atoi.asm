@@ -55,11 +55,11 @@ section .text
         sub cx,2
 
         _ATOI2:
-            mov bl, [var2+ecx]          ;guardar en ebx los primeros 8 bits
-            cmp bl, 30h                 ; it's comparing bl with 48. 48 = 0 according to the ascii table
-            jl _end                     ; if it lower to 0, go to the label finished 
-            cmp bl, 39h                 ; it's comparing bi with 57. 57 = 9 according to the ascii table
-            jg _end                     ; if it's greater to 9, go to the label finished
+            mov bl, [var2+ecx]          ; guardar en ebx los primeros 8 bits
+            cmp bl, 30h                 ; comparacion con la tabla ASCII 30h = 0
+            jl _end                     ; si menor a 0, finaliza
+            cmp bl, 39h                 ; comparacion con la tabla ASCII 39h = 9
+            jg _end                     ; si mayor a 9, finaliza
 
             sub bl,30h
 
@@ -80,9 +80,9 @@ section .text
         mov bx, [result2]
         add [resultFinal],bx
 
-        mov edx, 2                 ;message length de menu
-        mov ecx, [resultFinal]                 ;message to write: menu
-        mov ebx,1                     ;file descriptor (stdout)
+        mov edx, 2                 
+        mov ecx, [resultFinal]        
+        mov ebx,1                     
         mov eax,4                     ;system call number (sys_write)
         int 0x80                      ;call kernell
 
