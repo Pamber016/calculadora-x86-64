@@ -16,7 +16,7 @@ section .data
    lenask1: equ $-ask1
    ask2: db "Ingrese el segundo numero:",0xa
    lenask2: equ $-ask2  
-   resultMsg: db "Resultado: ", 0xa
+   resultMsg: db "Resultado decimal: ", 0xa
    lenresult: equ $-resultMsg
    cocienteMsg: db "Cociente: ", 0xa
    lencociente: equ $-cocienteMsg
@@ -25,6 +25,7 @@ section .data
    newLine: db " ", 0xa, 0xd
    lenNew: equ $-newLine
    ten dd 10              ; constant 10 for division
+   eight dd 8                ; Constant 8 for octal conversio
    ;MACROS
    %macro ATOI 5
     ; Prompt user
@@ -53,7 +54,7 @@ section .data
         sub edx, 30h             ; convert ASCII to integer (0-9)
         imul eax, eax, 10        ; multiply current result by 10
         add eax, edx             ; add new digit
-        inc esi                  ; move to next byte
+        inc esi                ; move to next byte
         jmp convert_loop%5       ; repeat until newline
 
     done_conversion%5:
@@ -93,6 +94,16 @@ section .data
         int 0x80               ;call kernell
    %endmacro
 
+   %macro printearConv 2
+        mov edx, %1            ;message length
+        dec edx
+        mov ecx, %2            ;message to write:
+        add ecx, 1
+        mov ebx,1              ;file descriptor (stdout)
+        mov eax,4              ;system call number (sys_write)
+        int 0x80               ;call kernell
+   %endmacro
+
    %macro resetResult 2
         mov eax, 0
         mov [%1], eax
@@ -102,6 +113,58 @@ section .data
         mov [%2 + 10], al
    %endmacro
 
+   %macro reset30 1
+        mov eax, 0
+        mov [%1], eax
+        mov [%1 + 4], eax
+        mov [%1 + 8], eax
+        mov [%1 + 12], eax
+        mov [%1 + 16], eax
+        mov [%1 + 20], eax
+        mov [%1 + 24], eax
+        mov [%1 + 28], ax
+        mov [%1 + 30], al
+   %endmacro
+
+   %macro hexConverter 3
+        mov edi, %3
+        mov ecx, 0
+        looper:
+            mov edx, 0
+            mov dl, [%1+edi]
+            add dl, 30h
+            cmp dl, 39h
+            jle continueLooper
+            add dl, 7h
+        continueLooper:
+            mov [%2+ecx], dl
+            inc edi
+            inc ecx
+            cmp edi, 30
+            jle looper
+            mov dl, 0xa
+            mov [%2+ecx], dl
+            inc ecx
+   %endmacro
+
+   %macro octB 4
+        mov edi, %3
+        mov ecx, 0
+        looperOctB%4:
+            mov edx, 0
+            mov dl, [%1+edi]
+            add dl, 30h
+            mov [%2+ecx], dl
+            inc edi
+            inc ecx
+            cmp edi, 30
+            jle looperOctB%4
+            mov dl, 0xa
+            mov [%2+ecx], dl
+            inc ecx
+   %endmacro
+
+
 section .bss
     ;Establecer variables para las operaciones y su tamaño en bytes
     input resb 2          ;reservar 2 byte - 16 bits
@@ -110,8 +173,10 @@ section .bss
     result1 resd 1        ; Result of conversion 1(RESD - 4 bytes)
     result2 resd 1        ; Result of conversion 2(RESD - 4 bytes)
     resultValues resd 1   ; Result of var1 ARITHMETIC OPERATION var2 (RESD - 4 bytes)
-    resultResiduo resd 1   ; Result of var1 ARITHMETIC OPERATION var2 (RESD - 4 bytes)
-    resultPrint resb 11  ; Buffer for result output (max 11 digits + null terminator)
+    resultResiduo resd 1   ; Result of the residual from the division
+    resultPrint resb 11  ; Buffer for result output (max 10 digits + null terminator)
+    hexResult resb 31
+    hexPrint resb 31
 
 section .text
    global _start                      ;must be declared for linker(ld)
@@ -214,10 +279,70 @@ section .text
 
     ;CONVERSIONES
     _hexadecimal:
+        mov eax, [resultValues]
+        mov esi, 30
+    _hexLoop:
+        mov ecx, 16
+        mov edx, 0
+        div ecx
+        mov [hexResult+esi], dl
+        dec esi
+        cmp eax, 0
+        jg _hexLoop
 
-    _binario:
+        printear len6, hexas
+        lea eax, [hexResult]
+        lea ebx, [hexPrint]
+        hexConverter eax, ebx, esi
+        printearConv ecx, hexPrint
+        lea ebx, [hexResult]
+        reset30 ebx
+        lea ebx, [hexPrint]
+        reset30 ebx
 
     _octal:
+        mov eax, [resultValues]
+        mov esi, 30
+    _octLoop:
+        mov ecx, 8
+        mov edx, 0
+        div ecx
+        mov [hexResult+esi], dl
+        dec esi
+        cmp eax, 0
+        jg _octLoop
+        
+        printear len5, octals
+        lea eax, [hexResult]
+        lea ebx, [hexPrint]
+        octB eax, ebx, esi, 1
+        printearConv ecx, hexPrint
+        lea ebx, [hexResult]
+        reset30 ebx
+        lea ebx, [hexPrint]
+        reset30 ebx
+    
+    _binario:
+        mov eax, [resultValues]
+        mov esi, 30
+    _biLoop:
+        mov ecx, 2
+        mov edx, 0
+        div ecx
+        mov [hexResult+esi], dl
+        dec esi
+        cmp eax, 0
+        jg _biLoop
+        
+        printear len4, binarios
+        lea eax, [hexResult]
+        lea ebx, [hexPrint]
+        octB eax, ebx, esi, 2
+        printearConv ecx, hexPrint
+        lea ebx, [hexResult]
+        reset30 ebx
+        lea ebx, [hexPrint]
+        reset30 ebx
 
     _goback:
         lea ebx, [resultValues]
