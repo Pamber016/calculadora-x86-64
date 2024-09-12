@@ -14,8 +14,8 @@ Primera tarea programada del curso de Lenguaje Ensamblador. Consiste de una calc
 Para poder ejecutar este programa debe contar con NASM instalado en su máquina, con el sistema operativo Linux. <br />
 Paso 1. Descargar el archivo calculadora.asm y el makefile del repositorio o documento .zip <br />
 Paso 2. Abrir la terminal del path en el que se encuentran estos archivos y ejecutar lo siguiente: <br />
-'''
+```
 make
 ./tarea1
-'''
+```
 Al ejecutar estos comandos, la calculadora estará disponible para su uso con las instrucciones para utilizarla. Muchas gracias.
